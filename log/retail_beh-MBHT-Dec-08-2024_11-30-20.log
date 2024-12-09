@@ -1,0 +1,261 @@
+Sun 08 Dec 2024 11:30:20 INFO  PID: 264160
+Sun 08 Dec 2024 11:30:20 INFO  Namespace(batch_size=2048, dataset='retail_beh', gpu_id=0, model='MBHT', valid_portion=0.1, validation=False)
+Sun 08 Dec 2024 11:30:20 INFO  
+General Hyper Parameters:
+gpu_id = 0
+use_gpu = True
+seed = 2020
+state = INFO
+reproducibility = True
+data_path = dataset/retail_beh
+show_progress = True
+save_dataset = False
+save_dataloaders = False
+benchmark_filename = ['train', 'test']
+
+Training Hyper Parameters:
+checkpoint_dir = saved
+epochs = 300
+train_batch_size = 64
+learner = adam
+learning_rate = 0.001
+eval_step = 1
+stopping_step = 10
+clip_grad_norm = None
+weight_decay = 0.0
+loss_decimal_place = 4
+
+Evaluation Hyper Parameters:
+eval_args = {'mode': 'full', 'order': 'TO', 'split': {'RS': [0.8, 0.1, 0.1]}, 'group_by': 'user'}
+metrics = ['Recall', 'NDCG', 'MRR']
+topk = [5, 10, 101]
+valid_metric = NDCG@10
+valid_metric_bigger = True
+eval_batch_size = 128
+metric_decimal_place = 4
+
+Dataset Hyper Parameters:
+field_separator = 	
+seq_separator =  
+USER_ID_FIELD = session_id
+ITEM_ID_FIELD = item_id
+RATING_FIELD = rating
+TIME_FIELD = timestamp
+seq_len = None
+LABEL_FIELD = label
+threshold = None
+NEG_PREFIX = neg_
+load_col = None
+unload_col = None
+unused_col = None
+additional_feat_suffix = None
+rm_dup_inter = None
+val_interval = None
+filter_inter_by_user_or_item = True
+user_inter_num_interval = [0,inf)
+item_inter_num_interval = [0,inf)
+alias_of_user_id = None
+alias_of_item_id = ['item_id_list']
+alias_of_entity_id = None
+alias_of_relation_id = None
+preload_weight = None
+normalize_field = None
+normalize_all = None
+ITEM_LIST_LENGTH_FIELD = item_length
+LIST_SUFFIX = _list
+MAX_ITEM_LIST_LENGTH = 200
+POSITION_FIELD = position_id
+HEAD_ENTITY_ID_FIELD = head_id
+TAIL_ENTITY_ID_FIELD = tail_id
+RELATION_ID_FIELD = relation_id
+ENTITY_ID_FIELD = entity_id
+
+Other Hyper Parameters: 
+neg_sampling = None
+repeatable = True
+n_layers = 2
+n_heads = 2
+hidden_size = 64
+inner_size = 256
+hidden_dropout_prob = 0.5
+attn_dropout_prob = 0.5
+hidden_act = gelu
+layer_norm_eps = 1e-12
+initializer_range = 0.02
+mask_ratio = 0.2
+loss_type = CE
+customized_eval = 1
+MODEL_TYPE = ModelType.SEQUENTIAL
+hyper_len = 6
+scales = [5, 4, 20, 40]
+enable_hg = 1
+enable_ms = 1
+abaltion = 
+batch_size = 2048
+MODEL_INPUT_TYPE = InputType.POINTWISE
+eval_type = EvaluatorType.RANKING
+device = cuda
+train_neg_sample_args = {'strategy': 'none'}
+eval_neg_sample_args = {'strategy': 'full', 'distribution': 'uniform'}
+
+
+Sun 08 Dec 2024 11:30:20 INFO  retail_beh
+The number of users: 30691
+Average actions of users: 1.065167807103291
+The number of items: 31240
+Average actions of items: 3.388618223281849
+The number of inters: 32690
+The sparsity of the dataset: 99.99659048303167%
+Remain Fields: ['session_id', 'item_id_list', 'item_type_list', 'item_id', 'item_length']
+Sun 08 Dec 2024 11:30:22 INFO  MBHT(
+  (type_embedding): Embedding(6, 64, padding_idx=0)
+  (item_embedding): Embedding(31241, 64, padding_idx=0)
+  (position_embedding): Embedding(201, 64)
+  (trm_encoder): TransformerEncoder(
+    (layer): ModuleList(
+      (0-1): 2 x TransformerLayer(
+        (multi_head_attention): MultiScaleAttention(
+          (out_fc): Linear(in_features=265, out_features=200, bias=True)
+          (attention1): LinearAttention(
+            (E): Linear(in_features=200, out_features=5, bias=True)
+            (F): Linear(in_features=200, out_features=5, bias=True)
+            (W_V): Linear(in_features=64, out_features=64, bias=True)
+            (W_K): Linear(in_features=64, out_features=64, bias=True)
+            (W_Q): Linear(in_features=64, out_features=64, bias=True)
+            (dense): Linear(in_features=64, out_features=64, bias=True)
+            (attn_dropout): Dropout(p=0.5, inplace=False)
+            (out_dropout): Dropout(p=0.5, inplace=False)
+            (LayerNorm): LayerNorm((64,), eps=1e-12, elementwise_affine=True)
+          )
+          (attention2): MultiHeadAttention(
+            (query): Linear(in_features=64, out_features=64, bias=True)
+            (key): Linear(in_features=64, out_features=64, bias=True)
+            (value): Linear(in_features=64, out_features=64, bias=True)
+            (attn_dropout): Dropout(p=0.5, inplace=False)
+            (dense): Linear(in_features=64, out_features=64, bias=True)
+            (LayerNorm): LayerNorm((64,), eps=1e-12, elementwise_affine=True)
+            (out_dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+        (feed_forward): FeedForward(
+          (dense_1): Linear(in_features=64, out_features=256, bias=True)
+          (dense_2): Linear(in_features=256, out_features=64, bias=True)
+          (LayerNorm): LayerNorm((64,), eps=1e-12, elementwise_affine=True)
+          (dropout): Dropout(p=0.5, inplace=False)
+        )
+      )
+    )
+  )
+  (hgnn_layer): HGNN(
+    (hgc1): HGNN_conv()
+    (hgc2): HGNN_conv()
+    (out_fc): Linear(in_features=64, out_features=64, bias=True)
+  )
+  (LayerNorm): LayerNorm((64,), eps=1e-12, elementwise_affine=True)
+  (dropout): Dropout(p=0.5, inplace=False)
+  (hg_type_embedding): Embedding(6, 64, padding_idx=0)
+)
+Trainable parameters: 2278036
+Sun 08 Dec 2024 11:30:26 INFO  epoch -1 evaluating [time: 3.59s, valid_score: 0.125100]
+Sun 08 Dec 2024 11:30:26 INFO  valid result: 
+recall@5 : 0.1395    recall@10 : 0.224    recall@101 : 1.0    ndcg@5 : 0.0982    ndcg@10 : 0.1251    ndcg@101 : 0.2703    mrr@5 : 0.0846    mrr@10 : 0.0955    mrr@101 : 0.1171    
+Sun 08 Dec 2024 11:33:20 INFO  epoch 0 training [time: 174.03s, train loss: 4477.6704]
+Sun 08 Dec 2024 11:33:23 INFO  epoch 0 evaluating [time: 2.90s, valid_score: 0.662400]
+Sun 08 Dec 2024 11:33:23 INFO  valid result: 
+recall@5 : 0.742    recall@10 : 0.818    recall@101 : 1.0    ndcg@5 : 0.6374    ndcg@10 : 0.6624    ndcg@101 : 0.6992    mrr@5 : 0.6024    mrr@10 : 0.613    mrr@101 : 0.6199    
+Sun 08 Dec 2024 11:33:23 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:36:17 INFO  epoch 1 training [time: 174.01s, train loss: 3500.8736]
+Sun 08 Dec 2024 11:36:20 INFO  epoch 1 evaluating [time: 2.89s, valid_score: 0.822400]
+Sun 08 Dec 2024 11:36:20 INFO  valid result: 
+recall@5 : 0.856    recall@10 : 0.8765    recall@101 : 1.0    ndcg@5 : 0.8157    ndcg@10 : 0.8224    ndcg@101 : 0.8442    mrr@5 : 0.8023    mrr@10 : 0.8051    mrr@101 : 0.808    
+Sun 08 Dec 2024 11:36:20 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:39:14 INFO  epoch 2 training [time: 174.26s, train loss: 2597.8100]
+Sun 08 Dec 2024 11:39:17 INFO  epoch 2 evaluating [time: 2.84s, valid_score: 0.865400]
+Sun 08 Dec 2024 11:39:17 INFO  valid result: 
+recall@5 : 0.884    recall@10 : 0.893    recall@101 : 1.0    ndcg@5 : 0.8625    ndcg@10 : 0.8654    ndcg@101 : 0.8834    mrr@5 : 0.8553    mrr@10 : 0.8565    mrr@101 : 0.8586    
+Sun 08 Dec 2024 11:39:17 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:42:11 INFO  epoch 3 training [time: 173.67s, train loss: 2058.3491]
+Sun 08 Dec 2024 11:42:14 INFO  epoch 3 evaluating [time: 2.84s, valid_score: 0.883800]
+Sun 08 Dec 2024 11:42:14 INFO  valid result: 
+recall@5 : 0.894    recall@10 : 0.9035    recall@101 : 1.0    ndcg@5 : 0.8807    ndcg@10 : 0.8838    ndcg@101 : 0.9001    mrr@5 : 0.8762    mrr@10 : 0.8775    mrr@101 : 0.8794    
+Sun 08 Dec 2024 11:42:14 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:45:07 INFO  epoch 4 training [time: 173.78s, train loss: 1781.9586]
+Sun 08 Dec 2024 11:45:10 INFO  epoch 4 evaluating [time: 2.84s, valid_score: 0.891700]
+Sun 08 Dec 2024 11:45:10 INFO  valid result: 
+recall@5 : 0.901    recall@10 : 0.9075    recall@101 : 1.0    ndcg@5 : 0.8896    ndcg@10 : 0.8917    ndcg@101 : 0.9085    mrr@5 : 0.8858    mrr@10 : 0.8867    mrr@101 : 0.889    
+Sun 08 Dec 2024 11:45:10 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:48:02 INFO  epoch 5 training [time: 171.90s, train loss: 1627.9584]
+Sun 08 Dec 2024 11:48:05 INFO  epoch 5 evaluating [time: 2.84s, valid_score: 0.893500]
+Sun 08 Dec 2024 11:48:05 INFO  valid result: 
+recall@5 : 0.9015    recall@10 : 0.9085    recall@101 : 1.0    ndcg@5 : 0.8912    ndcg@10 : 0.8935    ndcg@101 : 0.9092    mrr@5 : 0.8877    mrr@10 : 0.8886    mrr@101 : 0.8905    
+Sun 08 Dec 2024 11:48:05 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:51:01 INFO  epoch 6 training [time: 175.72s, train loss: 1510.8947]
+Sun 08 Dec 2024 11:51:04 INFO  epoch 6 evaluating [time: 2.89s, valid_score: 0.895200]
+Sun 08 Dec 2024 11:51:04 INFO  valid result: 
+recall@5 : 0.902    recall@10 : 0.9115    recall@101 : 1.0    ndcg@5 : 0.8921    ndcg@10 : 0.8952    ndcg@101 : 0.9129    mrr@5 : 0.8887    mrr@10 : 0.89    mrr@101 : 0.8932    
+Sun 08 Dec 2024 11:51:04 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:54:01 INFO  epoch 7 training [time: 176.97s, train loss: 1422.9699]
+Sun 08 Dec 2024 11:54:04 INFO  epoch 7 evaluating [time: 2.93s, valid_score: 0.916000]
+Sun 08 Dec 2024 11:54:04 INFO  valid result: 
+recall@5 : 0.94    recall@10 : 0.9455    recall@101 : 1.0    ndcg@5 : 0.9142    ndcg@10 : 0.916    ndcg@101 : 0.9255    mrr@5 : 0.9057    mrr@10 : 0.9065    mrr@101 : 0.9077    
+Sun 08 Dec 2024 11:54:04 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:57:00 INFO  epoch 8 training [time: 176.50s, train loss: 1343.6148]
+Sun 08 Dec 2024 11:57:03 INFO  epoch 8 evaluating [time: 2.88s, valid_score: 0.929000]
+Sun 08 Dec 2024 11:57:03 INFO  valid result: 
+recall@5 : 0.9355    recall@10 : 0.945    recall@101 : 1.0    ndcg@5 : 0.9259    ndcg@10 : 0.929    ndcg@101 : 0.9389    mrr@5 : 0.9226    mrr@10 : 0.9239    mrr@101 : 0.9254    
+Sun 08 Dec 2024 11:57:03 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 11:59:59 INFO  epoch 9 training [time: 175.90s, train loss: 1273.1759]
+Sun 08 Dec 2024 12:00:02 INFO  epoch 9 evaluating [time: 2.85s, valid_score: 0.928400]
+Sun 08 Dec 2024 12:00:02 INFO  valid result: 
+recall@5 : 0.942    recall@10 : 0.948    recall@101 : 1.0    ndcg@5 : 0.9264    ndcg@10 : 0.9284    ndcg@101 : 0.9374    mrr@5 : 0.9213    mrr@10 : 0.9222    mrr@101 : 0.9232    
+Sun 08 Dec 2024 12:02:55 INFO  epoch 10 training [time: 173.12s, train loss: 1204.6008]
+Sun 08 Dec 2024 12:02:58 INFO  epoch 10 evaluating [time: 2.93s, valid_score: 0.934200]
+Sun 08 Dec 2024 12:02:58 INFO  valid result: 
+recall@5 : 0.9405    recall@10 : 0.9465    recall@101 : 1.0    ndcg@5 : 0.9322    ndcg@10 : 0.9342    ndcg@101 : 0.9439    mrr@5 : 0.9295    mrr@10 : 0.9303    mrr@101 : 0.9317    
+Sun 08 Dec 2024 12:02:58 INFO  Saving current best: saved/MBHT-retail_beh-Dec-08-2024_11-30-22.pth
+Sun 08 Dec 2024 12:05:53 INFO  epoch 11 training [time: 174.75s, train loss: 1155.7521]
+Sun 08 Dec 2024 12:05:56 INFO  epoch 11 evaluating [time: 2.86s, valid_score: 0.921700]
+Sun 08 Dec 2024 12:05:56 INFO  valid result: 
+recall@5 : 0.941    recall@10 : 0.9515    recall@101 : 1.0    ndcg@5 : 0.9184    ndcg@10 : 0.9217    ndcg@101 : 0.9304    mrr@5 : 0.9107    mrr@10 : 0.9121    mrr@101 : 0.9133    
+Sun 08 Dec 2024 12:08:50 INFO  epoch 12 training [time: 174.10s, train loss: 1104.8430]
+Sun 08 Dec 2024 12:08:53 INFO  epoch 12 evaluating [time: 2.83s, valid_score: 0.929700]
+Sun 08 Dec 2024 12:08:53 INFO  valid result: 
+recall@5 : 0.9385    recall@10 : 0.945    recall@101 : 1.0    ndcg@5 : 0.9276    ndcg@10 : 0.9297    ndcg@101 : 0.9397    mrr@5 : 0.924    mrr@10 : 0.9248    mrr@101 : 0.9263    
+Sun 08 Dec 2024 12:11:47 INFO  epoch 13 training [time: 174.12s, train loss: 1071.8573]
+Sun 08 Dec 2024 12:11:50 INFO  epoch 13 evaluating [time: 2.86s, valid_score: 0.915700]
+Sun 08 Dec 2024 12:11:50 INFO  valid result: 
+recall@5 : 0.934    recall@10 : 0.9405    recall@101 : 1.0    ndcg@5 : 0.9136    ndcg@10 : 0.9157    ndcg@101 : 0.9265    mrr@5 : 0.9065    mrr@10 : 0.9074    mrr@101 : 0.909    
+Sun 08 Dec 2024 12:14:44 INFO  epoch 14 training [time: 174.04s, train loss: 1023.2813]
+Sun 08 Dec 2024 12:14:47 INFO  epoch 14 evaluating [time: 2.86s, valid_score: 0.925300]
+Sun 08 Dec 2024 12:14:47 INFO  valid result: 
+recall@5 : 0.936    recall@10 : 0.9415    recall@101 : 1.0    ndcg@5 : 0.9234    ndcg@10 : 0.9253    ndcg@101 : 0.9356    mrr@5 : 0.9192    mrr@10 : 0.92    mrr@101 : 0.9213    
+Sun 08 Dec 2024 12:17:42 INFO  epoch 15 training [time: 175.52s, train loss: 973.2806]
+Sun 08 Dec 2024 12:17:45 INFO  epoch 15 evaluating [time: 2.94s, valid_score: 0.926600]
+Sun 08 Dec 2024 12:17:45 INFO  valid result: 
+recall@5 : 0.9375    recall@10 : 0.947    recall@101 : 1.0    ndcg@5 : 0.9235    ndcg@10 : 0.9266    ndcg@101 : 0.9365    mrr@5 : 0.9188    mrr@10 : 0.9201    mrr@101 : 0.9217    
+Sun 08 Dec 2024 12:20:41 INFO  epoch 16 training [time: 175.62s, train loss: 954.1277]
+Sun 08 Dec 2024 12:20:44 INFO  epoch 16 evaluating [time: 2.87s, valid_score: 0.905100]
+Sun 08 Dec 2024 12:20:44 INFO  valid result: 
+recall@5 : 0.9275    recall@10 : 0.94    recall@101 : 1.0    ndcg@5 : 0.901    ndcg@10 : 0.9051    ndcg@101 : 0.916    mrr@5 : 0.8923    mrr@10 : 0.8941    mrr@101 : 0.8956    
+Sun 08 Dec 2024 12:23:38 INFO  epoch 17 training [time: 174.34s, train loss: 918.8656]
+Sun 08 Dec 2024 12:23:41 INFO  epoch 17 evaluating [time: 2.84s, valid_score: 0.917400]
+Sun 08 Dec 2024 12:23:41 INFO  valid result: 
+recall@5 : 0.939    recall@10 : 0.9475    recall@101 : 1.0    ndcg@5 : 0.9146    ndcg@10 : 0.9174    ndcg@101 : 0.9268    mrr@5 : 0.9063    mrr@10 : 0.9075    mrr@101 : 0.9088    
+Sun 08 Dec 2024 12:26:34 INFO  epoch 18 training [time: 173.78s, train loss: 887.9363]
+Sun 08 Dec 2024 12:26:37 INFO  epoch 18 evaluating [time: 2.87s, valid_score: 0.909200]
+Sun 08 Dec 2024 12:26:37 INFO  valid result: 
+recall@5 : 0.9295    recall@10 : 0.938    recall@101 : 1.0    ndcg@5 : 0.9064    ndcg@10 : 0.9092    ndcg@101 : 0.9206    mrr@5 : 0.8986    mrr@10 : 0.8997    mrr@101 : 0.9014    
+Sun 08 Dec 2024 12:29:33 INFO  epoch 19 training [time: 176.05s, train loss: 871.5638]
+Sun 08 Dec 2024 12:29:36 INFO  epoch 19 evaluating [time: 2.87s, valid_score: 0.926400]
+Sun 08 Dec 2024 12:29:36 INFO  valid result: 
+recall@5 : 0.94    recall@10 : 0.9485    recall@101 : 1.0    ndcg@5 : 0.9235    ndcg@10 : 0.9264    ndcg@101 : 0.9357    mrr@5 : 0.9179    mrr@10 : 0.9192    mrr@101 : 0.9205    
+Sun 08 Dec 2024 12:32:31 INFO  epoch 20 training [time: 174.96s, train loss: 843.8177]
+Sun 08 Dec 2024 12:32:34 INFO  epoch 20 evaluating [time: 2.88s, valid_score: 0.895000]
+Sun 08 Dec 2024 12:32:34 INFO  valid result: 
+recall@5 : 0.9015    recall@10 : 0.9165    recall@101 : 1.0    ndcg@5 : 0.8901    ndcg@10 : 0.895    ndcg@101 : 0.9099    mrr@5 : 0.8863    mrr@10 : 0.8884    mrr@101 : 0.8903    
+Sun 08 Dec 2024 12:35:30 INFO  epoch 21 training [time: 176.18s, train loss: 815.7169]
+Sun 08 Dec 2024 12:35:33 INFO  epoch 21 evaluating [time: 2.91s, valid_score: 0.919800]
+Sun 08 Dec 2024 12:35:33 INFO  valid result: 
+recall@5 : 0.931    recall@10 : 0.9405    recall@101 : 1.0    ndcg@5 : 0.9167    ndcg@10 : 0.9198    ndcg@101 : 0.9308    mrr@5 : 0.9119    mrr@10 : 0.9132    mrr@101 : 0.9149    
+Sun 08 Dec 2024 12:35:33 INFO  Finished training, best eval result in epoch 10
+Sun 08 Dec 2024 12:35:33 INFO  test result: {'recall@5': 0.9405, 'recall@10': 0.9465, 'recall@101': 1.0, 'ndcg@5': 0.9322, 'ndcg@10': 0.9342, 'ndcg@101': 0.9439, 'mrr@5': 0.9295, 'mrr@10': 0.9303, 'mrr@101': 0.9317}
