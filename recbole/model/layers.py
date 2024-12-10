@@ -473,10 +473,10 @@ class MultiScaleAttention(nn.Module):
         self.num_heads = n_heads
         self.scale_1 = scales[1]
         self.scale_2 = scales[2]
-        self.scale_3 = scales[3]
-        # self.out_fc = nn.Linear(200+200//self.scale_1+200//self.scale_2, 200)
+        # self.scale_3 = scales[3]
+        self.out_fc = nn.Linear(200+200//self.scale_1+200//self.scale_2, 200)
 
-        self.out_fc = nn.Linear(200+200//self.scale_1+200//self.scale_2+200//self.scale_3, 200)
+        # self.out_fc = nn.Linear(200+200//self.scale_1+200//self.scale_2+200//self.scale_3, 200)
         # self.attention1 = LinearMultiheadAttention(hidden_dim, num_heads, seq_len=200, proj_k=args.linear_size)
         self.attention1 = LinearAttention(n_heads, scales[0], hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps)
         self.attention2 = MultiHeadAttention(n_heads, hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps)
@@ -506,16 +506,16 @@ class MultiScaleAttention(nn.Module):
         x = self.attention2(next_input, None)
         scale_outputs.append(torch.reshape(x, [batch_size, seq_length//self.scale_2, self.num_heads*self.d_k]))
 
-        # new scale 3
-        next_input = torch.mean(input_tensor.reshape(batch_size, self.scale_3, seq_length//self.scale_3, self.num_heads*self.d_k), dim=1)
-        # attention over 1/scale_2 sequence
-        x = self.attention2(next_input, None)
-        scale_outputs.append(torch.reshape(x, [batch_size, seq_length//self.scale_3, self.num_heads*self.d_k]))
+        # # new scale 3
+        # next_input = torch.mean(input_tensor.reshape(batch_size, self.scale_3, seq_length//self.scale_3, self.num_heads*self.d_k), dim=1)
+        # # attention over 1/scale_2 sequence
+        # x = self.attention2(next_input, None)
+        # scale_outputs.append(torch.reshape(x, [batch_size, seq_length//self.scale_3, self.num_heads*self.d_k]))
 
-        output = torch.cat(scale_outputs, dim=1)
-        output = torch.transpose(output, 1, 2)
-        output = self.out_fc(output)
-        output = torch.transpose(output, 1, 2)
+        # output = torch.cat(scale_outputs, dim=1)
+        # output = torch.transpose(output, 1, 2)
+        # output = self.out_fc(output)
+        # output = torch.transpose(output, 1, 2)
 
         return output
         # return output, [linear_attn_weight.mean(1), pool_attn_weight_1.mean(1), pool_attn_weight_2.mean(1)]
@@ -718,7 +718,7 @@ class TransformerEncoder(nn.Module):
         inner_size=256,
         hidden_dropout_prob=0.5,
         attn_dropout_prob=0.5,
-        hidden_act='gelu',
+        hidden_act='AdaGELU2',
         layer_norm_eps=1e-12,
         multiscale=False,
         scales=None
