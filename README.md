@@ -1,24 +1,28 @@
-## MBHT
-This is the final project of data mining. We modified the method in this paper **Multi-Behavior Hypergraph-Enhanced Transformer for Next-Item Recommendation**, accepted by **KDD'22**.
+# mbht
 
-## Requirements
+## Setup
 
-`pip install -r requirements.txt`
+1. Download Dataset [IJCAI](https://tianchi.aliyun.com/dataset/42) and put it inside ./dataset
 
+2. Install conda enviroment:
 
-## train model and evaluate model
-
-`python run_MBHT.py --model=MBHT --dataset=retail_beh --gpu_id=0  --batch_size=2048`  
-
-
-## Citation
-If you find this work helpful, please kindly cite this research paper:
+```sh
+conda env create -f environment.yml
+conda activate dm-proj-mbht-fork
 ```
-@inproceedings{yang2022mbht,
-  title={Multi-behavior hypergraph-enhanced transformer for sequential recommendation},
-  author={Yang, Yuhao and Huang, Chao and Xia, Lianghao and Liang, Yuxuan and Yu, Yanwei and Li, Chenliang},
-  booktitle={Proceedings of the 28th ACM SIGKDD conference on knowledge discovery and data mining},
-  pages={2263--2274},
-  year={2022}
-}
+
+## Visual result by tensorboard
+
+```sh
+tensorboard --logdir=./log_tensorboard
+```
+
+then open browser at  <http://localhost:6006>. click on "HPARAMS" in the top navigation bar to see result with different parameters (choose aug_type and aug_prob in the left sidebar).
+
+## Run
+
+this will train model by all differet method (include baseline and with other data augmentation method), which may takes ~3 days
+
+``` sh
+sh ./run_train.sh
 ```

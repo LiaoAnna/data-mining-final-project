@@ -17,7 +17,13 @@ import importlib
 import os
 import pickle
 
-from recbole.data.dataloader import *
+from recbole.data.dataloader import (
+    FullSortEvalDataLoader,
+    KnowledgeBasedDataLoader,
+    NegSampleEvalDataLoader,
+    TrainDataLoader,
+    UserDataLoader,
+)
 from recbole.sampler import KGSampler, Sampler, RepeatableSampler
 from recbole.utils import ModelType, ensure_dir, get_local_time, set_color
 
@@ -38,6 +44,8 @@ def create_dataset(config):
         model_type = config['MODEL_TYPE']
         if model_type == ModelType.SEQUENTIAL:
             from .dataset import SequentialDataset
+
+            # ste_1
             return SequentialDataset(config)
         elif model_type == ModelType.KNOWLEDGE:
             from .dataset import KnowledgeBasedDataset
@@ -149,6 +157,10 @@ def get_dataloader(config, phase):
         return register_table[config['model']](config, phase)
 
     model_type = config['MODEL_TYPE']
+    
+    print("---------")
+    print(phase, model_type ,config['MODEL_TYPE'])
+    
     if phase == 'train':
         if model_type != ModelType.KNOWLEDGE:
             return TrainDataLoader

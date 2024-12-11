@@ -90,6 +90,7 @@ class Dataset(object):
     """
 
     def __init__(self, config):
+        # ste_2
         self.config = config
         self.dataset_name = config['dataset']
         self.logger = getLogger()
@@ -103,6 +104,9 @@ class Dataset(object):
 
         self._get_preset()
         self._get_field_from_config()
+
+        # ste_3
+        print("ste_3")
         self._load_data(self.dataset_name, self.dataset_path)
         self._init_alias()
         self._data_processing()
@@ -244,6 +248,9 @@ class Dataset(object):
         """
         if not os.path.exists(dataset_path):
             self._download()
+        print(token, dataset_path)
+        
+        
         self._load_inter_feat(token, dataset_path)
         self.user_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.USER, 'uid_field')
         self.item_feat = self._load_user_or_item_feat(token, dataset_path, FeatureSource.ITEM, 'iid_field')
@@ -262,6 +269,7 @@ class Dataset(object):
             token (str): dataset name.
             dataset_path (str): path of dataset dir.
         """
+        print("#_load_inter_feat")
         if self.benchmark_filename_list is None:
             inter_feat_path = os.path.join(dataset_path, f'{token}.inter')
             if not os.path.isfile(inter_feat_path):
@@ -304,6 +312,7 @@ class Dataset(object):
             ``user_id`` and ``item_id`` has source :obj:`~recbole.utils.enum_type.FeatureSource.USER_ID` and
             :obj:`~recbole.utils.enum_type.FeatureSource.ITEM_ID`
         """
+        print("#_load_user_or_item_feat")
         feat_path = os.path.join(dataset_path, f'{token}.{source.value}')
         if os.path.isfile(feat_path):
             feat = self._load_feat(feat_path, source)
@@ -333,6 +342,8 @@ class Dataset(object):
             token (str): dataset name.
             dataset_path (str): path of dataset dir.
         """
+        print("#_load_additional_feat")
+
         if self.config['additional_feat_suffix'] is None:
             return
         for suf in self.config['additional_feat_suffix']:
@@ -396,6 +407,8 @@ class Dataset(object):
             Their length is limited only after calling :meth:`~_dict_to_interaction` or
             :meth:`~_dataframe_to_interaction`
         """
+        
+        print("#_load_feat")
         self.logger.debug(set_color(f'Loading feature from [{filepath}] (source: [{source}]).', 'green'))
 
         load_col, unload_col = self._get_load_and_unload_col(source)
@@ -1464,14 +1477,20 @@ class Dataset(object):
             list: List of built :class:`Dataset`.
         """
         self._change_feat_format()
-
+        
+        print("[[[[build]]]]")
+        print(self.benchmark_filename_list)
+        
         if self.benchmark_filename_list is not None:
             cumsum = list(np.cumsum(self.file_size_list))
             datasets = [self.copy(self.inter_feat[start:end]) for start, end in zip([0] + cumsum[:-1], cumsum)]
+            print("return")
             return datasets
 
         # ordering
         ordering_args = self.config['eval_args']['order']
+        print("[[[ordering_args]]]")
+        print(ordering_args)
         if ordering_args == 'RO':
             self.shuffle()
         elif ordering_args == 'TO':
@@ -1481,12 +1500,16 @@ class Dataset(object):
 
         # splitting & grouping
         split_args = self.config['eval_args']['split']
+        print("[[[split_args]]]")
+        print(split_args)
         if split_args is None:
             raise ValueError('The split_args in eval_args should not be None.')
         if not isinstance(split_args, dict):
             raise ValueError(f'The split_args [{split_args}] should be a dict.')
 
         split_mode = list(split_args.keys())[0]
+        print("[[[split_mode]]]")
+        print(split_mode)
         assert len(split_args.keys()) == 1
         group_by = self.config['eval_args']['group_by']
         if split_mode == 'RS':
@@ -1502,6 +1525,9 @@ class Dataset(object):
             datasets = self.leave_one_out(group_by=self.uid_field, leave_one_mode=split_args['LS'])
         else:
             raise NotImplementedError(f'The splitting_method [{split_mode}] has not been implemented.')
+
+        print("[[[datasets]]]")
+        print(datasets)
 
         return datasets
 
@@ -1664,6 +1690,8 @@ class Dataset(object):
                 - History length matrix (torch.Tensor): ``history_len`` described above.
         """
         self._check_field('uid_field', 'iid_field')
+        
+        print('***********s')
 
         user_ids, item_ids = self.inter_feat[self.uid_field].numpy(), self.inter_feat[self.iid_field].numpy()
         if value_field is None:

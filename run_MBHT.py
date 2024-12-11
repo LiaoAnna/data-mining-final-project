@@ -1,3 +1,7 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+
 import argparse
 from logging import getLogger
 import os
@@ -6,7 +10,7 @@ from recbole.data import create_dataset
 from recbole.data.utils import get_dataloader, create_samplers
 from recbole.model.sequential_recommender.mbht import MBHT
 from recbole.utils import init_logger, init_seed, get_model, get_trainer, set_color
-
+from rich import print as rprint
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -16,10 +20,24 @@ def get_args():
     parser.add_argument('--valid_portion', type=float, default=0.1, help='ratio of validation set.')
     parser.add_argument('--gpu_id', type=int, default=0)
     parser.add_argument('--batch_size', type=int, default=2048)
+
+
+    parser.add_argument('--aug_type', type=str)
+    parser.add_argument('--aug_prob', type=float)
+    # (with mask)
+    # reppad, 
+    # subset-split,
+    # crop,
+    # delete,
+    # reorder
+    # insert,
+    # inplace,
+    # slide-window
+    
     return parser.parse_known_args()[0]
 
 
-if __name__ == '__main__':
+def main():
     args = get_args()
 
     # configurations initialization
@@ -42,16 +60,21 @@ if __name__ == '__main__':
         "train_batch_size": 32 if args.dataset == "ijcai_beh" else 64,
         "eval_batch_size":24 if args.dataset == "ijcai_beh" else 128,
         "hyper_len":10 if args.dataset == "ijcai_beh" else 6,
-        "scales":[10, 4, 12,20],
+        "scales":[10, 4, 20],
         "enable_hg":1,
         "enable_ms":1,
         "customized_eval":1,
-        "abaltion":""
+        "abaltion":"",
+        
+        "aug_type": args.aug_type,
+        "aug_prob": args.aug_prob
     }
 
     if args.dataset == "retail_beh":
-        config_dict['scales'] = [5, 4, 20, 40]
+        config_dict['scales'] = [5, 4, 20]
         config_dict['hyper_len'] = 6
+        
+    rprint(config_dict)
         
     config = Config(model="MBHT", dataset=f'{args.dataset}', config_dict=config_dict)
     # config['device']="cpu"
@@ -83,7 +106,7 @@ if __name__ == '__main__':
 
     # model loading and initialization
     model = get_model(config['model'])(config, train_data.dataset).to(config['device'])
-    logger.info(model)
+    # logger.info(model)
 
     # trainer loading and initialization
     trainer = get_trainer(config['MODEL_TYPE'], config['model'])(config, model)
@@ -94,3 +117,6 @@ if __name__ == '__main__':
     )
 
     logger.info(set_color('test result', 'yellow') + f': {test_result}')
+
+if __name__ == '__main__':
+    main()

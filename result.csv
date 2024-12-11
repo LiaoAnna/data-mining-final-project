@@ -1,0 +1,18 @@
+Aug Prob,Aug Method,Val Result
+0.2,mask,0.4782
+0.01,del,0.3773
+0.01,reppad,0.3695
+0.2,del,0.0573
+0.2,reppad,0.4022
+0.05,del,0.3996
+0.05,reppad,0.4416
+0.1,del,0.1095
+0.1,reppad,0.3477
+0.01,del+mask,0.4556
+0.01,reppad+mask,0.4319
+0.05,del+mask,0.3976
+0.05,reppad+mask,0.4274
+0.1,del+mask,0.3885
+0.1,reppad+mask,0.4621
+0.2,del+mask,0.398
+0.2,reppad+mask,0.4731

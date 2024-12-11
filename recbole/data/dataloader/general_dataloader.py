@@ -38,6 +38,7 @@ class TrainDataLoader(NegSampleDataLoader):
         super().__init__(config, dataset, sampler, shuffle=shuffle)
 
     def _init_batch_size_and_step(self):
+        print("_init_batch_size_and_step")
         batch_size = self.config['train_batch_size']
         if self.neg_sample_args['strategy'] == 'by':
             batch_num = max(batch_size // self.times, 1)

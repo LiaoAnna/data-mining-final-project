@@ -7,27 +7,57 @@ import math
 import random
 import numpy as np
 import torch
-from torch import nn
+from torch import Tensor, nn
 import torch.nn.functional as F
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.layers import TransformerEncoder, HGNN
-import sys
+
+import pandas as pd
+import numpy as np
+import random
+import math
+from typing import Any, List
+import numpy.typing as npt
+
+# ==========================================================================
+def aug_del(seq: Tensor,beh: Tensor, prob: float, device: str) -> tuple[Tensor, Tensor]:
+    aug_seq = seq.clone()
+    aug_beh = beh.clone()
+    
+    for i in range(seq.size(0)):  # Iterate over each row
+        p = torch.rand(1).item()
+        seq_row = seq[i]
+        if p >= prob:
+            # print("low prob")
+            continue
+        non_zero_indices = torch.nonzero(seq_row).squeeze()  # Find indices of non-zero elements
+        if non_zero_indices.size(0) < 3:
+            # print("small")
+            continue
+
+        idx_to_remove = non_zero_indices[torch.randint(0, non_zero_indices.size(0) - 1, (1,))].item()  # Randomly pick one
+
+        # print(f"del: {seq_row[idx_to_remove]}")
+
+        aug_seq_row = torch.cat((seq_row[:idx_to_remove], seq_row[idx_to_remove + 1 :], torch.tensor([0], device=device)), 0)
+        aug_beh_row = torch.cat((beh[i][:idx_to_remove], beh[i][idx_to_remove + 1 :], torch.tensor([0], device=device)), 0)
+        aug_seq[i] = aug_seq_row
+        aug_beh[i] = aug_beh_row
+        
+
+    return aug_seq, aug_beh
+
+# ==========================================================================
 
 def sim(z1: torch.Tensor, z2: torch.Tensor):
     z1 = F.normalize(z1)
     z2 = F.normalize(z2)
     return torch.matmul(z1, z2.permute(0,2,1))
-class PairwiseRankingLoss(nn.Module):
-    def forward(self, pos_scores, neg_scores):
-        return torch.mean(torch.clamp(1 - pos_scores + neg_scores, min=0))
-
-
 
 class MBHT(SequentialRecommender):
 
     def __init__(self, config, dataset):
         super(MBHT, self).__init__(config, dataset)
-        self.device = config['device']
 
         # load parameters info
         self.n_layers = config['n_layers']
@@ -48,6 +78,10 @@ class MBHT(SequentialRecommender):
         self.enable_hg = config['enable_hg']
         self.enable_ms = config['enable_ms']
         self.dataset = config['dataset']
+        
+        self.aug_type = config['aug_type']
+        self.aug_prob = config['aug_prob']
+
 
         self.buy_type = dataset.field2token_id["item_type_list"]['0']
 
@@ -155,51 +189,157 @@ class MBHT(SequentialRecommender):
         sequence = sequence[-max_length:]  # truncate according to the max_length
         return sequence
 
+    # TODO
     def reconstruct_train_data(self, item_seq, type_seq, last_buy):
         """
         Mask item sequence for training.
         """
+        
+        # print("=========")
+        # print('reconstruct_train_data')
+
+
+
         last_buy = last_buy.tolist()
         device = item_seq.device
         batch_size = item_seq.size(0)
 
+        # Maybe we can do augmentation here
+        # 1. Add Padding for Mask Tokens
+
+        # for it in item_seq:
+        #     print(it.shape)
+
+        # remove all zero_padding behind
+        
         zero_padding = torch.zeros(item_seq.size(0), dtype=torch.long, device=item_seq.device)
+
+
         item_seq = torch.cat((item_seq, zero_padding.unsqueeze(-1)), dim=-1)  # [B max_len+1]
         type_seq = torch.cat((type_seq, zero_padding.unsqueeze(-1)), dim=-1)
+
+
+
+        # number of sequence instance, count the number of items(non-zero numbers) in each sequence
         n_objs = (torch.count_nonzero(item_seq, dim=1)+1).tolist()
+
+        # print(f"num of objects: {len(n_objs)}")
+        # print(n_objs[0],n_objs[1],n_objs[2])
+
+        # if batchsize=64
+        # -> shape=(64, 200)
+        # print(item_seq[2])
+        # print(type_seq.shape)
+        # print(n_objs)
+        
+        # print(item_seq[0][:50])
+        # tensor([16772,  4903,   464, 16949, 16950, 16951,  3005,  4903,     0,     0,...]))
+
+
+
+        # exit()
+
+        # masked_sequence = repPad(masked_sequence)
+        # type_instances[instance_idx] = repPad(type_instances[instance_idx])
+
+
+
+
+        # 2. Add Last Purchase Item
         for batch_id in range(batch_size):
-            n_obj = n_objs[batch_id]
-            item_seq[batch_id][n_obj-1] = last_buy[batch_id]
-            type_seq[batch_id][n_obj-1] = self.buy_type
+            n_obj = n_objs[batch_id] # num of obejcts in this sequence
+            item_seq[batch_id][n_obj-1] = last_buy[batch_id] # add last buy item to the last position of this sequence
+            type_seq[batch_id][n_obj-1] = self.buy_type # add last buy item type to the last position of this sequence
 
-        sequence_instances = item_seq.cpu().numpy().tolist()
-        type_instances = type_seq.cpu().numpy().tolist()
+        # ============================= AUG =============================
+        if self.aug_type in ["reppad", "reppad+mask"]:
+            for idx, item in enumerate(item_seq):
+                if item[-1] != 0:
+                    continue
+                
+                prob = random.random()
+                if prob >= self.aug_prob:
+                    continue
+                    
+                non_zero_part = item[:torch.where(item == 0)[0][0]]
+                transformed = non_zero_part.repeat(len(item) // len(non_zero_part))
+                transformed = torch.cat([transformed, non_zero_part[:len(item) % len(non_zero_part)]])
+                item_seq[idx] = transformed
+            
+            for idx, item in enumerate(type_seq):
+                if item[-1] != 0:
+                    continue
 
+                prob = random.random()
+                if prob >= self.aug_prob:
+                    continue
+
+                non_zero_part = item[:torch.where(item == 0)[0][0]]
+                transformed = non_zero_part.repeat(len(item) // len(non_zero_part))
+                transformed = torch.cat([transformed, non_zero_part[:len(item) % len(non_zero_part)]])
+                type_seq[idx] = transformed
+
+        if self.aug_type in ["del", "del+mask"]:
+            item_seq, type_seq = aug_del(seq=item_seq, beh=type_seq, prob=self.aug_prob, device=device)
+
+        # ===============================================================
+
+        
+        sequence_instances = item_seq.cpu().numpy().tolist() # items ids whole batch
+        type_instances = type_seq.cpu().numpy().tolist() # behavior types whole batch
+
+
+
+
+        # 3. Initialize Outputs
         # Masked Item Prediction
         # [B * Len]
         masked_item_sequence = []
         pos_items = []
         masked_index = []
 
+        # Each sequence instance (e.g.: [123, 526, 29412, 12, 1, 0, 0, 0])
+        # type_instances[instance_idx] = [1, 2, 4, 3, 2, 0, 0, 0]
+        # n_objs[instance_idx] = 5
+        # self.mask_ratio = 0.2
+        # self.mask_token = 12345678
+
+        # masked_sequence = [123, 526, 29412, 12, 1, 0, 0, 0]
+
         for instance_idx, instance in enumerate(sequence_instances):
             # WE MUST USE 'copy()' HERE!
             masked_sequence = instance.copy()
+            
+
+            # print("-----------")
+            # print(masked_sequence)
             pos_item = []
             index_ids = []
+            # print("===========")
+            # print(instance)
             for index_id, item in enumerate(instance):
-                # padding is 0, the sequence is end
                 if index_id == n_objs[instance_idx]-1:
                     pos_item.append(item)
+                    index_ids.append(index_id)
                     masked_sequence[index_id] = self.mask_token
                     type_instances[instance_idx][index_id] = 0
-                    index_ids.append(index_id)
+                    # print('msk')
                     break
+
+                
                 prob = random.random()
-                if prob < self.mask_ratio:
+                if prob < self.mask_ratio and "mask" in self.aug_type:
+                    # print("msk prob")
                     pos_item.append(item)
+                    index_ids.append(index_id)
                     masked_sequence[index_id] = self.mask_token
                     type_instances[instance_idx][index_id] = 0
-                    index_ids.append(index_id)
+
+            # print('###')
+            # print(masked_sequence)
+            # print(type_instances[instance_idx])
+            # if instance_idx>5:
+            #     exit()
 
             masked_item_sequence.append(masked_sequence)
             pos_items.append(self._padding_sequence(pos_item, self.mask_item_length))
@@ -212,7 +352,21 @@ class MBHT(SequentialRecommender):
         # [B mask_len]
         masked_index = torch.tensor(masked_index, dtype=torch.long, device=device).view(batch_size, -1)
         type_instances = torch.tensor(type_instances, dtype=torch.long, device=device).view(batch_size, -1)
-        return masked_item_sequence, pos_items, masked_index, type_instances
+
+        # print(masked_item_sequence.shape
+        # , pos_items.shape
+        # , masked_index.shape
+        # , type_instances.shape)
+        
+        # print(masked_item_sequence[:5])
+        # exit()
+
+        return (
+            masked_item_sequence,
+            pos_items,
+            masked_index,
+            type_instances,
+        )
 
     def reconstruct_test_data(self, item_seq, item_seq_len, item_type):
         """
@@ -231,18 +385,7 @@ class MBHT(SequentialRecommender):
         position_embedding = self.position_embedding(position_ids)
         type_embedding = self.type_embedding(type_seq)
         item_emb = self.item_embedding(item_seq)
-        #*improve input embedding
         input_emb = item_emb + position_embedding + type_embedding
-        # print(f'item_emb {item_emb.shape}')
-        # print(f'input_emb {input_emb.shape}')
-        # sys.exit(0)
-        # emb_dim = 64
-        # concat_emb = torch.cat([ position_embedding, type_embedding], dim=-1)  
-
-        # projection_layer = nn.Linear(2 * emb_dim, emb_dim).to('cuda')  
-        # p_t_emb = projection_layer(concat_emb)
-        # input_emb = item_emb + position_embedding + type_embedding+p_t_emb
-        # input_emb = item_emb + type_embedding
         input_emb = self.LayerNorm(input_emb)
         input_emb = self.dropout(input_emb)
         extended_attention_mask = self.get_attention_mask(item_seq)
@@ -340,7 +483,7 @@ class MBHT(SequentialRecommender):
         multi_hot = torch.zeros(masked_index.size(0), max_length, device=masked_index.device)
         multi_hot[torch.arange(masked_index.size(0)), masked_index] = 1
         return multi_hot
-    
+
     def calculate_loss(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         session_id = interaction['session_id']
@@ -356,11 +499,8 @@ class MBHT(SequentialRecommender):
         # [B mask_len max_len] * [B max_len H] -> [B mask_len H]
         # only calculate loss for masked position
         seq_output = torch.bmm(pred_index_map, seq_output)  # [B mask_len H]
-        #* 改成其他loss
-        
-        # loss_fct = nn.NLLLoss(reduction='none')
+
         loss_fct = nn.CrossEntropyLoss(reduction='none')
-        # loss_fct = nn.MultiMarginLoss(reduction='none')
         test_item_emb = self.item_embedding.weight  # [item_num H]
         logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B mask_len item_num]
         targets = (masked_index > 0).float().view(-1)  # [B*mask_len]
@@ -440,11 +580,7 @@ class MBHT(SequentialRecommender):
             else:
                 metrics, sim_items = torch.topk(seq_item_sim, group_len, sorted=False)
             # map indices to item tokens
-            # * correct two object in differnt devices
-            seq = seq.to(self.device)
-            # print(seq.device, sim_items.device)
-
-            sim_items = seq[sim_items]
+            sim_items = seq[sim_items.to("cpu")]
             row_idx, masked_pos = torch.nonzero(sim_items==self.mask_token, as_tuple=True)
             sim_items[row_idx, masked_pos] = seq[row_idx]
             metrics[row_idx, masked_pos] = 1.0

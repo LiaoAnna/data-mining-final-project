@@ -45,6 +45,7 @@ class SequentialDataset(Dataset):
 
         if self.config['benchmark_filename'] is not None:
             return
+        # TODO: aug from raw data
         self.logger.debug('Augmentation for sequential recommendation.')
         self.data_augmentation()
 
@@ -70,6 +71,8 @@ class SequentialDataset(Dataset):
 
         self.set_field_property(self.item_list_length_field, FeatureType.TOKEN, FeatureSource.INTERACTION, 1)
 
+
+    # TODO
     def data_augmentation(self):
         """Augmentation processing for sequential dataset.
 
@@ -87,6 +90,7 @@ class SequentialDataset(Dataset):
 
         ``u1, <i1, i2, i3> | i4``
         """
+        print("#data_augmentation")
         self.logger.debug('data_augmentation')
 
         self._aug_presets()
