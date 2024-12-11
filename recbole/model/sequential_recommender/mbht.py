@@ -11,23 +11,17 @@ from torch import nn
 import torch.nn.functional as F
 from recbole.model.abstract_recommender import SequentialRecommender
 from recbole.model.layers import TransformerEncoder, HGNN
-import sys
+
 
 def sim(z1: torch.Tensor, z2: torch.Tensor):
     z1 = F.normalize(z1)
     z2 = F.normalize(z2)
     return torch.matmul(z1, z2.permute(0,2,1))
-class PairwiseRankingLoss(nn.Module):
-    def forward(self, pos_scores, neg_scores):
-        return torch.mean(torch.clamp(1 - pos_scores + neg_scores, min=0))
-
-
 
 class MBHT(SequentialRecommender):
 
     def __init__(self, config, dataset):
         super(MBHT, self).__init__(config, dataset)
-        self.device = config['device']
 
         # load parameters info
         self.n_layers = config['n_layers']
@@ -231,18 +225,7 @@ class MBHT(SequentialRecommender):
         position_embedding = self.position_embedding(position_ids)
         type_embedding = self.type_embedding(type_seq)
         item_emb = self.item_embedding(item_seq)
-        #*improve input embedding
         input_emb = item_emb + position_embedding + type_embedding
-        # print(f'item_emb {item_emb.shape}')
-        # print(f'input_emb {input_emb.shape}')
-        # sys.exit(0)
-        # emb_dim = 64
-        # concat_emb = torch.cat([ position_embedding, type_embedding], dim=-1)  
-
-        # projection_layer = nn.Linear(2 * emb_dim, emb_dim).to('cuda')  
-        # p_t_emb = projection_layer(concat_emb)
-        # input_emb = item_emb + position_embedding + type_embedding+p_t_emb
-        # input_emb = item_emb + type_embedding
         input_emb = self.LayerNorm(input_emb)
         input_emb = self.dropout(input_emb)
         extended_attention_mask = self.get_attention_mask(item_seq)
@@ -264,10 +247,12 @@ class MBHT(SequentialRecommender):
             seq_len = item_seq.shape[1]
             n_objs = torch.count_nonzero(item_seq, dim=1)
             indexed_embs = list()
+            batch_idx = 0
             for batch_idx in range(batch_size):
                 n_obj = n_objs[batch_idx]
                 # l', dim
                 indexed_embs.append(x_raw[batch_idx][:n_obj])
+
             indexed_embs = torch.cat(indexed_embs, dim=0)
             hgnn_embs = self.hgnn_layer(indexed_embs, Gs)
             hgnn_take_start = 0
@@ -279,7 +264,7 @@ class MBHT(SequentialRecommender):
                 # l', dim || padding emb -> l, dim
                 padding = torch.zeros((seq_len-n_obj, embs.shape[-1])).to(item_seq.device)
                 embs = torch.cat((embs, padding), dim=0)
-                if mask_positions_nums is not None:
+                if mask_positions_nums is not None:     # train
                     mask_len = mask_positions_nums[1][batch_idx]
                     poss = mask_positions_nums[0][batch_idx][-mask_len:].tolist()
                     for pos in poss:
@@ -290,12 +275,14 @@ class MBHT(SequentialRecommender):
                         # else:
                         sliding_window_start = pos-self.sw_before if pos-self.sw_before>-1 else 0
                         sliding_window_end = pos+self.sw_follow if pos+self.sw_follow<n_obj else n_obj-1
-                        readout = torch.mean(torch.cat((embs[sliding_window_start:pos], embs[pos+1:sliding_window_end]), dim=0),dim=0)
+                        # readout = torch.mean(torch.cat((embs[sliding_window_start:pos], embs[pos+1:sliding_window_end]), dim=0),dim=0)
+                        readout = torch.max(torch.cat((embs[sliding_window_start:pos], embs[pos+1:sliding_window_end]), dim=0),dim=0).values
                         embs[pos] = readout
-                else:
+                else: # eval
                     pos = (item_seq[batch_idx]==self.mask_token).nonzero(as_tuple=True)[0][0]
                     sliding_window_start = pos-self.sw_before if pos-self.sw_before>-1 else 0
-                    embs[pos] = torch.mean(embs[sliding_window_start:pos], dim=0)
+                    # embs[pos] = torch.mean(embs[sliding_window_start:pos], dim=0)
+                    embs[pos] = torch.max(embs[sliding_window_start:pos], dim=0).values
                 hgnn_embs_padded.append(embs)
             # b, l, dim
             hgnn_embs = torch.stack(hgnn_embs_padded, dim=0)
@@ -340,7 +327,7 @@ class MBHT(SequentialRecommender):
         multi_hot = torch.zeros(masked_index.size(0), max_length, device=masked_index.device)
         multi_hot[torch.arange(masked_index.size(0)), masked_index] = 1
         return multi_hot
-    
+
     def calculate_loss(self, interaction):
         item_seq = interaction[self.ITEM_SEQ]
         session_id = interaction['session_id']
@@ -356,11 +343,8 @@ class MBHT(SequentialRecommender):
         # [B mask_len max_len] * [B max_len H] -> [B mask_len H]
         # only calculate loss for masked position
         seq_output = torch.bmm(pred_index_map, seq_output)  # [B mask_len H]
-        #* 改成其他loss
-        
-        # loss_fct = nn.NLLLoss(reduction='none')
+
         loss_fct = nn.CrossEntropyLoss(reduction='none')
-        # loss_fct = nn.MultiMarginLoss(reduction='none')
         test_item_emb = self.item_embedding.weight  # [item_num H]
         logits = torch.matmul(seq_output, test_item_emb.transpose(0, 1))  # [B mask_len item_num]
         targets = (masked_index > 0).float().view(-1)  # [B*mask_len]
@@ -440,9 +424,7 @@ class MBHT(SequentialRecommender):
             else:
                 metrics, sim_items = torch.topk(seq_item_sim, group_len, sorted=False)
             # map indices to item tokens
-            # * correct two object in differnt devices
-            seq = seq.to(self.device)
-            # print(seq.device, sim_items.device)
+            sim_items = sim_items.to(seq.device)
 
             sim_items = seq[sim_items]
             row_idx, masked_pos = torch.nonzero(sim_items==self.mask_token, as_tuple=True)

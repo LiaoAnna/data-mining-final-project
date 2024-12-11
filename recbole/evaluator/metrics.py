@@ -128,7 +128,6 @@ class MAP(TopkMetric):
         sum_pre = np.cumsum(pre * pos_index.astype(float), axis=1)
         len_rank = np.full_like(pos_len, pos_index.shape[1])
         actual_len = np.where(pos_len > len_rank, len_rank, pos_len)
-        
         result = np.zeros_like(pos_index, dtype=float)
         for row, lens in enumerate(actual_len):
             ranges = np.arange(1, pos_index.shape[1] + 1)
@@ -187,15 +186,13 @@ class NDCG(TopkMetric):
     def metric_info(self, pos_index, pos_len):
         len_rank = np.full_like(pos_len, pos_index.shape[1])
         idcg_len = np.where(pos_len > len_rank, len_rank, pos_len)
-        # * correct 
-        #iranks = np.zeros_like(pos_index, dtype=float)
+
         iranks = np.zeros_like(pos_index, dtype=float)
         iranks[:, :] = np.arange(1, pos_index.shape[1] + 1)
         idcg = np.cumsum(1.0 / np.log2(iranks + 1), axis=1)
         for row, idx in enumerate(idcg_len):
             idcg[row, idx:] = idcg[row, idx - 1]
-        # * correct 
-        # ranks = np.zeros_like(pos_index, dtype=float)
+
         ranks = np.zeros_like(pos_index, dtype=float)
         ranks[:, :] = np.arange(1, pos_index.shape[1] + 1)
         dcg = 1.0 / np.log2(ranks + 1)
@@ -431,7 +428,7 @@ class LogLoss(LossMetric):
 
     def metric_info(self, preds, trues):
         eps = 1e-15
-        preds = np.float64(preds)
+        preds = float64(preds)
         preds = np.clip(preds, eps, 1 - eps)
         loss = np.sum(-trues * np.log(preds) - (1 - trues) * np.log(1 - preds))
         return loss / len(preds)

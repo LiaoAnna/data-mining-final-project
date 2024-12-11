@@ -1,0 +1,25 @@
+mm/dd time am/pm dataset batchsize. info
+
+11/27 08:35 pm	retail 2048. original setting
+test result: {'recall@5': 0.9075, 'recall@10': 0.9135, 'recall@101': 1.0, 'ndcg@5': 0.8961, 'ndcg@10': 0.898, 'ndcg@101': 0.9118, 'mrr@5': 0.8923,'ndc 'mrr@10': 0.8931, 'mrr@101': 0.8943} 
+
+12/6 06:22 pm	retail 2048. max pooling
+test result: {'recall@5': 0.9245, 'recall@10': 0.934, 'recall@101': 1.0, 'ndcg@5': 0.9135, 'ndcg@10': 0.9167, 'ndcg@101': 0.9282, 'mrr@5': 0.9098, 'mrr@10': 0.9112, 'mrr@101': 0.9127} 
+
+12/7 04:30 pm	retail 2048. max pooling
+test result: {'recall@5': 0.932, 'recall@10': 0.939, 'recall@101': 1.0, 'ndcg@5': 0.9184, 'ndcg@10': 0.9206, 'ndcg@101': 0.9312, 'mrr@5': 0.9137, 'mrr@10': 0.9147, 'mrr@101': 0.916}
+
+12/7 10:00 pm	retail 2048 max pooling
+test result: {'recall@5': 0.945, 'recall@10': 0.9535, 'recall@101': 1.0, 'ndcg@5': 0.9269, 'ndcg@10': 0.9297, 'ndcg@101': 0.938, 'mrr@5': 0.9208, 'mrr@10': 0.922, 'mrr@101': 0.9231}
+
+12/8 00:52 am	retail 2048 original setting(mean pooling)
+test result: {'recall@5': 0.909, 'recall@10': 0.9135, 'recall@101': 1.0, 'ndcg@5': 0.8974, 'ndcg@10': 0.8989, 'ndcg@101': 0.9126, 'mrr@5': 0.8935, 'mrr@10': 0.8941, 'mrr@101': 0.8954}
+
+12/8 14:20 pm 	retail 2048 original setting
+test result: {'recall@5': 0.9085, 'recall@10': 0.914, 'recall@101': 1.0, 'ndcg@5': 0.8965, 'ndcg@10': 0.8983, 'ndcg@101': 0.9119, 'mrr@5': 0.8925, 'mrr@10': 0.8933, 'mrr@101': 0.8944}
+
+
+12/8 17:53 pm 	retail 2048 original setting
+test result: {'recall@5': 0.9155, 'recall@10': 0.927, 'recall@101': 1.0, 'ndcg@5': 0.8986, 'ndcg@10': 0.9023, 'ndcg@101': 0.9158, 'mrr@5': 0.893, 'mrr@10': 0.8945, 'mrr@101': 0.8966}
+
+batch_size = 128, seq_len = 200, n_objs = tensor...

@@ -42,7 +42,7 @@ if __name__ == '__main__':
         "train_batch_size": 32 if args.dataset == "ijcai_beh" else 64,
         "eval_batch_size":24 if args.dataset == "ijcai_beh" else 128,
         "hyper_len":10 if args.dataset == "ijcai_beh" else 6,
-        "scales":[10, 4, 12,20],
+        "scales":[10, 4, 20],
         "enable_hg":1,
         "enable_ms":1,
         "customized_eval":1,
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     }
 
     if args.dataset == "retail_beh":
-        config_dict['scales'] = [5, 4, 20, 40]
+        config_dict['scales'] = [5, 4, 20]
         config_dict['hyper_len'] = 6
         
     config = Config(model="MBHT", dataset=f'{args.dataset}', config_dict=config_dict)

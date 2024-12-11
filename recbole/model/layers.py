@@ -381,26 +381,7 @@ class VanillaAttention(nn.Module):
         hidden_states = (input_tensor * weights.unsqueeze(-1)).sum(dim=-2)
         return hidden_states, weights
 
-class AdaGELU(nn.Module):
-    def __init__(self, init_alpha=1.0):
-        super(AdaGELU, self).__init__()
-       
-        self.alpha = nn.Parameter(torch.tensor(init_alpha, dtype=torch.float32))
-    
-    def forward(self, x):
-        
-        return x * 0.5 * (1.0 + torch.tanh((self.alpha * x) * 0.7978845608 * (1 + 0.044715 * (self.alpha * x)**2)))
-    
-class AdaGELU2(nn.Module):
-    def __init__(self, init_alpha=1.0):
-        super(AdaGELU2, self).__init__()
-       
-        self.alpha = nn.Parameter(torch.tensor(init_alpha, dtype=torch.float32))
-    
-    def forward(self, x):
-        return x * 0.5 * (1.0 + torch.erf((self.alpha * x)/ math.sqrt(2.0)))
-  
-    
+
 class LinearAttention(nn.Module):
     """
     compute linear attention using projection E and F.
@@ -473,10 +454,8 @@ class MultiScaleAttention(nn.Module):
         self.num_heads = n_heads
         self.scale_1 = scales[1]
         self.scale_2 = scales[2]
-        self.scale_3 = scales[3]
-        # self.out_fc = nn.Linear(200+200//self.scale_1+200//self.scale_2, 200)
+        self.out_fc = nn.Linear(200+200//self.scale_1+200//self.scale_2, 200)
 
-        self.out_fc = nn.Linear(200+200//self.scale_1+200//self.scale_2+200//self.scale_3, 200)
         # self.attention1 = LinearMultiheadAttention(hidden_dim, num_heads, seq_len=200, proj_k=args.linear_size)
         self.attention1 = LinearAttention(n_heads, scales[0], hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps)
         self.attention2 = MultiHeadAttention(n_heads, hidden_size, hidden_dropout_prob, attn_dropout_prob, layer_norm_eps)
@@ -505,12 +484,6 @@ class MultiScaleAttention(nn.Module):
         # attention over 1/scale_2 sequence
         x = self.attention2(next_input, None)
         scale_outputs.append(torch.reshape(x, [batch_size, seq_length//self.scale_2, self.num_heads*self.d_k]))
-
-        # new scale 3
-        next_input = torch.mean(input_tensor.reshape(batch_size, self.scale_3, seq_length//self.scale_3, self.num_heads*self.d_k), dim=1)
-        # attention over 1/scale_2 sequence
-        x = self.attention2(next_input, None)
-        scale_outputs.append(torch.reshape(x, [batch_size, seq_length//self.scale_3, self.num_heads*self.d_k]))
 
         output = torch.cat(scale_outputs, dim=1)
         output = torch.transpose(output, 1, 2)
@@ -624,12 +597,6 @@ class FeedForward(nn.Module):
             "swish": self.swish,
             "tanh": torch.tanh,
             "sigmoid": torch.sigmoid,
-            "leakyrelu": nn.LeakyReLU,
-            "silu": nn.SiLU,
-            "mish":nn.Mish,
-            "AdaGELU":AdaGELU(init_alpha=1.0),
-            "AdaGELU2":AdaGELU2(init_alpha=1.0)
-            
         }
         return ACT2FN[act]
 
